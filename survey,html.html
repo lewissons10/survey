@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Extended Movie Survey</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* --- CSS Variables --- */
+    :root {
+      --bg-body: #0f172a;       /* Dark Slate */
+      --bg-card: #1e293b;       /* Lighter Slate */
+      --primary: #8b5cf6;       /* Purple */
+      --primary-hover: #7c3aed;
+      --text-main: #f1f5f9;     /* White/Grey */
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    /* --- Centered Card Layout --- */
+    .survey-card {
+      background: var(--bg-card);
+      width: 100%;
+      max-width: 600px;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    /* Progress Bar */
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background: #020617;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--primary);
+      transition: width 0.4s ease;
+    }
+
+    /* Content Area */
+    .card-content { padding: 40px; }
+
+    /* Typography */
+    h1, h2 { font-weight: 700; margin-bottom: 10px; color: white; }
+    p { color: var(--text-muted); line-height: 1.6; margin-bottom: 30px; font-size: 0.95rem; }
+    
+    .section-label {
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 1px;
+      color: var(--primary);
+      font-weight: 700;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    /* Form Elements */
+    .input-group { margin-bottom: 25px; }
+    
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 0.95rem;
+      color: #e2e8f0;
+    }
+
+    .form-control, .form-select {
+      width: 100%;
+      padding: 12px 16px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: white;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* Grid for Radios/Checkboxes */
+    .grid-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .option-label {
+      display: block;
+      padding: 12px;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      color: var(--text-muted);
+    }
+    .hidden-input { display: none; }
+    
+    .hidden-input:checked + .option-label {
+      border-color: var(--primary);
+      background: rgba(139, 92, 246, 0.1);
+      color: white;
+      font-weight: 600;
+    }
+
+    /* Buttons */
+    .btn-container {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+    
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: white; color: white; }
+
+    /* Helper Classes */
+    .step { display: none; animation: fadeIn 0.4s ease; }
+    .step.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .icon-big { font-size: 3rem; color: var(--primary); margin-bottom: 20px; }
+    .error-msg { color: #f87171; font-size: 0.85rem; margin-top: 5px; display: none; }
+
+    /* Mobile tweak */
+    @media (max-width: 500px) {
+      .grid-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="survey-card">
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="card-content">
+      <form id="surveyForm" onsubmit="return false;">
+
+        <div class="step active" id="step0">
+          <div style="text-align: center;">
+            <i class="fas fa-clapperboard icon-big"></i>
+            <h1>Movie Survey</h1>
+            <p>
+              Hi there! We’d love to know more about your movie preferences. 
+              It's 15 questions and takes about 3 minutes.
+            </p>
+            <button class="btn btn-primary" style="width: 100%;" onclick="nextStep(0)">Start Now</button>
+          </div>
+        </div>
+
+        <div class="step" id="step1">
+          <span class="section-label">Step 1 of 4</span>
+          <h2>About You</h2>
+          <p>A quick introduction before we begin.</p>
+
+          <div class="input-group">
+            <label class="label">Full Name</label>
+            <input type="text" class="form-control" id="nameInput" placeholder="Enter your name">
+            <div class="error-msg" id="nameError">Name is required</div>
+          </div>
+
+          <div class="input-group">
+            <label class="label">Email Address</label>
+            <input type="email" class="form-control" placeholder="name@example.com">
+          </div>
+
+          <div class="btn-container">
+            <button class="btn btn-secondary" onclick="prevStep(1)">Back</button>
+            <button class="btn btn-primary" onclick="nextStep(1)">Next</button>
+          </div>
+        </div>
+
+        <div class="step" id="step2">
+          <span class="section-label">Step 2 of 4</span>
+          <h2>Viewing Habits</h2>
+          <p>Questions 1 - 5</p>
+
+          <div class="input-group">
+            <label class="label">1. How often do you watch movies?</label>
+            <select class="form-select">
+              <option>Daily</option>
+              <option>Weekly</option>
+              <option>Monthly</option>
+              <option>Rarely</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="label">2. Preferred Device</label>
+            <div class="grid-options">
+              <label><input type="radio" name="dev" class="hidden-input"><span class="option-label">TV</span></label>
+              <label><input type="radio" name="dev" class="hidden-input"><span class="option-label">Laptop</span></label>
+              <label><input type="radio" name="dev" class="hidden-input"><span class="option-label">Phone</span></label>
+              <label><input type="radio" name="dev" class="hidden-input"><span class="option-label">Tablet</span></label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="label">3. Cinema or Home?</label>
+            <select class="form-select">
+              <option>Prefer Cinema</option>
+              <option>Prefer Home Streaming</option>
+              <option>Both Equally</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="label">4. Subtitles?</label>
+            <div class="grid-options">
+              <label><input type="radio" name="sub" class="hidden-input"><span class="option-label">Always</span></label>
+              <label><input type="radio" name="sub" class="hidden-input"><span class="option-label">Never</span></label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="label">5. Who do you watch with?</label>
+            <select class="form-select">
+              <option>Alone</option>
+              <option>Partner</option>
+              <option>Friends</option>
+              <option>Family</option>
+            </select>
+          </div>
+
+          <div class="btn-container">
+            <button class="btn btn-secondary" onclick="prevStep(2)">Back</button>
+            <button class="btn btn-primary" onclick="nextStep(2)">Next</button>
+          </div>
+        </div>
+
+        <div class="step" id="step3">
+          <span class="section-label">Step 3 of 4</span>
+          <h2>Preferences</h2>
+          <p>Questions 6 - 10</p>
+
+          <div class="input-group">
+            <label class="label">6. Favorite Genre</label>
+            <select class="form-select">
+              <option>Action</option>
+              <option>Comedy</option>
+              <option>Drama</option>
+              <option>Sci-Fi</option>
+              <option>Horror</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="label">7. Platforms (Select all)</label>
+            <div class="grid-options">
+              <label><input type="checkbox" class="hidden-input"><span class="option-label">Netflix</span></label>
+              <label><input type="checkbox" class="hidden-input"><span class="option-label">Prime</span></label>
+              <label><input type="checkbox" class="hidden-input"><span class="option-label">Disney+</span></label>
+              <label><input type="checkbox" class="hidden-input"><span class="option-label">HBO</span></label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="label">8. How do you find movies?</label>
+            <select class="form-select">
+              <option>Social Media</option>
+              <option>Trailers</option>
+              <option>Friends</option>
+              <option>Reviews</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="label">9. Do critics influence you?</label>
+            <div class="grid-options">
+              <label><input type="radio" name="rev" class="hidden-input"><span class="option-label">Yes</span></label>
+              <label><input type="radio" name="rev" class="hidden-input"><span class="option-label">No</span></label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="label">10. Best recent movie?</label>
+            <input type="text" class="form-control" placeholder="e.g. Oppenheimer">
+          </div>
+
+          <div class="btn-container">
+            <button class="btn btn-secondary" onclick="prevStep(3)">Back</button>
+            <button class="btn btn-primary" onclick="nextStep(3)">Next</button>
+          </div>
+        </div>
+
+        <div class="step" id="step4">
+          <span class="section-label">Step 4 of 4</span>
+          <h2>The Details</h2>
+          <p>Questions 11 - 15 (Last Step!)</p>
+
+          <div class="input-group">
+            <label class="label">11. Favorite Movie Snack?</label>
+            <select class="form-select">
+              <option>Popcorn</option>
+              <option>Nachos</option>
+              <option>Candy / Chocolate</option>
+              <option>No snacks</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="label">12. Do you re-watch movies?</label>
+            <div class="grid-options">
+              <label><input type="radio" name="rewatch" class="hidden-input"><span class="option-label">Often</span></label>
+              <label><input type="radio" name="rewatch" class="hidden-input"><span class="option-label">Rarely</span></label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="label">13. Ideal Movie Runtime?</label>
+            <select class="form-select">
+              <option>Under 90 mins</option>
+              <option>90 - 120 mins</option>
+              <option>2 hours +</option>
+              <option>No preference</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label class="label">14. Do you watch international films?</label>
+            <div class="grid-options">
+              <label><input type="radio" name="intl" class="hidden-input"><span class="option-label">Yes</span></label>
+              <label><input type="radio" name="intl" class="hidden-input"><span class="option-label">No</span></label>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="label">15. Franchises vs Originals?</label>
+            <select class="form-select">
+              <option>Love Franchises (Marvel, etc)</option>
+              <option>Prefer Original Stories</option>
+              <option>I like both equally</option>
+            </select>
+          </div>
+
+          <div class="btn-container">
+            <button class="btn btn-secondary" onclick="prevStep(4)">Back</button>
+            <button class="btn btn-primary" onclick="submitSurvey()">Submit Survey</button>
+          </div>
+        </div>
+
+        <div class="step" id="step5">
+          <div style="text-align: center;">
+            <i class="fas fa-check-circle icon-big" style="color: #10b981;"></i>
+            <h1>Thank You!</h1>
+            <p>
+              Your 15 answers have been recorded. <br>
+              We appreciate your feedback!
+            </p>
+            <button class="btn btn-secondary" style="width: 100%;" onclick="location.reload()">Back to Start</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 0;
+    const totalSteps = 5; // 0=Welcome, 1=Info, 2=Habits, 3=Prefs, 4=Details, 5=Thank You
+
+    function updateUI(step) {
+      // Hide all steps
+      document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+      // Show current step
+      document.getElementById('step' + step).classList.add('active');
+
+      // Update Progress Bar (0 to 5)
+      let percent = (step / totalSteps) * 100;
+      document.getElementById('progressFill').style.width = percent + '%';
+    }
+
+    function nextStep(curr) {
+      // Validation for Step 1
+      if (curr === 1) {
+        const name = document.getElementById('nameInput').value;
+        if (name.trim() === "") {
+          document.getElementById('nameError').style.display = 'block';
+          document.getElementById('nameInput').style.borderColor = '#f87171';
+          return;
+        } else {
+          document.getElementById('nameError').style.display = 'none';
+          document.getElementById('nameInput').style.borderColor = '#334155';
+        }
+      }
+
+      currentStep++;
+      updateUI(currentStep);
+    }
+
+    function prevStep(curr) {
+      currentStep--;
+      updateUI(currentStep);
+    }
+
+    function submitSurvey() {
+      // Simulate loading button
+      const btn = document.querySelector('#step4 .btn-primary');
+      btn.innerText = 'Sending...';
+      btn.style.opacity = '0.7';
+
+      setTimeout(() => {
+        currentStep++;
+        updateUI(currentStep);
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
